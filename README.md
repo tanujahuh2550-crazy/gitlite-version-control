@@ -1,0 +1,1 @@
+# gitlite-version-control
