@@ -1,10 +1,10 @@
 # gitlite-version-control
 
-# VersionVault - A Mini Version Control System
+# Gitlite - A Mini Version Control System
 
 ## 📌 Project Overview
 
-**VersionVault** is a console-based Mini Version Control System developed in **C++** as a Project-Based Learning (PBL) project for the **Data Structures and Algorithms (DSA)** course.
+**GITLITE** is a console-based Mini Version Control System developed in **C AND C++** as a Project-Based Learning (PBL) project for the **Data Structures and Algorithms (DSA)** course.
 
 The project is inspired by the fundamental concepts of modern version control systems such as Git. Rather than replicating Git, it demonstrates how core data structures can be applied to build a simplified version control system capable of managing project versions, commit history, branches, searching, and rollback operations.
 
@@ -122,7 +122,7 @@ VersionVault/
 * Testing & Debugging
 * Documentation & Presentation
 
-### Lakshit
+### Kaushal
 
 * Commit Engine
 * Linked List Implementation
@@ -147,8 +147,7 @@ VersionVault/
 
 # 🛠️ Technologies Used
 
-* C++
-* Object-Oriented Programming (OOP)
+* C/C++
 * File Handling
 * Git
 * GitHub
@@ -182,7 +181,7 @@ After completing this project, the team will understand:
 
 # 📖 Conclusion
 
-VersionVault demonstrates how multiple Data Structures work together to solve a real-world software engineering problem. By integrating linked lists, stacks, queues, trees, hashing, searching, sorting, and file handling into a single application, the project provides a practical understanding of DSA concepts beyond textbook implementations.
+GITLITE demonstrates how multiple Data Structures work together to solve a real-world software engineering problem. By integrating linked lists, stacks, queues, trees, hashing, searching, sorting, and file handling into a single application, the project provides a practical understanding of DSA concepts beyond textbook implementations.
 
 ---
 
@@ -190,7 +189,7 @@ VersionVault demonstrates how multiple Data Structures work together to solve a 
 
 **Course:** Data Structures and Algorithms (PBL)
 
-**Language:** C++
+**Language:** C/C++
 
 **Project Type:** Console-Based Application
 
