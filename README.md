@@ -189,7 +189,7 @@ GITLITE demonstrates how multiple Data Structures work together to solve a real-
 
 **Course:** Data Structures and Algorithms (PBL)
 
-**Language:** C/C++
+**Language:** C
 
 **Project Type:** Console-Based Application
 
