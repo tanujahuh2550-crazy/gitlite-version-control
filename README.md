@@ -4,7 +4,7 @@
 
 ## 📌 Project Overview
 
-**GITLITE** is a console-based Mini Version Control System developed in **C AND C++** as a Project-Based Learning (PBL) project for the **Data Structures and Algorithms (DSA)** course.
+**GITLITE** is a console-based Mini Version Control System developed in **C** as a Project-Based Learning (PBL) project for the **Data Structures and Algorithms (DSA)** course.
 
 The project is inspired by the fundamental concepts of modern version control systems such as Git. Rather than replicating Git, it demonstrates how core data structures can be applied to build a simplified version control system capable of managing project versions, commit history, branches, searching, and rollback operations.
 
@@ -189,7 +189,7 @@ GITLITE demonstrates how multiple Data Structures work together to solve a real-
 
 **Course:** Data Structures and Algorithms (PBL)
 
-**Language:** C/C++
+**Language:** C
 
 **Project Type:** Console-Based Application
 
