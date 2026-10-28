@@ -12,7 +12,9 @@ void save_data(const char *filename, const char *data)
     }
 
     fprintf(file, "%s", data);
+
     fclose(file);
+
     printf("Data saved successfully.\n");
 }
 
@@ -26,7 +28,8 @@ void load_data(const char *filename)
         return;
     }
 
-    int ch;
+    char ch;
+
     while ((ch = fgetc(file)) != EOF)
     {
         putchar(ch);

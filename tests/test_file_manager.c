@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "../include/file_manager.h"
 
-int main(void)
+int main()
 {
     const char *filename = "test_data.txt";
     const char *data = "GitLite File Handling Test";
@@ -13,5 +13,6 @@ int main(void)
     load_data(filename);
 
     printf("\n\nTest completed.\n");
+
     return 0;
 }
