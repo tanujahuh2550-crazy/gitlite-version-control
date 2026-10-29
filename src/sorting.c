@@ -111,25 +111,40 @@ static void swap_commit_data(Commit* a, Commit* b)
     if (a == NULL || b == NULL)
         return;
 
+    // Swap commit IDs
     int temp_id = a->commitID;
     a->commitID = b->commitID;
     b->commitID = temp_id;
 
-    char temp_message[256];
-    char temp_author[64];
-    char temp_timestamp[32];
+    // Swap messages
+    char temp_message[MAX_COMMIT_MESSAGE_LENGTH];
+    strcpy(temp_message, a->message);
+    strcpy(a->message, b->message);
+    strcpy(b->message, temp_message);
 
-    snprintf(temp_message, sizeof(temp_message), "%s", a->message);
-    snprintf(temp_author, sizeof(temp_author), "%s", a->author);
-    snprintf(temp_timestamp, sizeof(temp_timestamp), "%s", a->timestamp);
+    // Swap authors
+    char temp_author[MAX_AUTHOR_LENGTH];
+    strcpy(temp_author, a->author);
+    strcpy(a->author, b->author);
+    strcpy(b->author, temp_author);
 
-    snprintf(a->message, sizeof(a->message), "%s", b->message);
-    snprintf(a->author, sizeof(a->author), "%s", b->author);
-    snprintf(a->timestamp, sizeof(a->timestamp), "%s", b->timestamp);
+    // Swap timestamps
+    char temp_timestamp[MAX_TIMESTAMP_LENGTH];
+    strcpy(temp_timestamp, a->timestamp);
+    strcpy(a->timestamp, b->timestamp);
+    strcpy(b->timestamp, temp_timestamp);
 
-    snprintf(b->message, sizeof(b->message), "%s", temp_message);
-    snprintf(b->author, sizeof(b->author), "%s", temp_author);
-    snprintf(b->timestamp, sizeof(b->timestamp), "%s", temp_timestamp);
+    // Swap tracked files
+    TrackedFile temp_files[MAX_FILES];
+
+    memcpy(temp_files, a->files, sizeof(temp_files));
+    memcpy(a->files, b->files, sizeof(a->files));
+    memcpy(b->files, temp_files, sizeof(b->files));
+
+    // Swap file counts
+    int temp_count = a->file_count;
+    a->file_count = b->file_count;
+    b->file_count = temp_count;
 }
 
 /* Partition linked list for Quick Sort */
