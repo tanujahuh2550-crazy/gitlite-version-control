@@ -1,7 +1,10 @@
 #ifndef FILE_MANAGER_H
 #define FILE_MANAGER_H
 
-void save_data(const char *filename, const char *data);
-void load_data(const char *filename);
+#include <stddef.h>
+
+int save_data(const char *filename, const char *data);
+int load_data(const char *filename);
+int read_file_content(const char *path, char *buffer, size_t buffer_size);
 
 #endif
