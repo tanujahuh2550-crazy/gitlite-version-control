@@ -1,8 +1,9 @@
-
 #include <stdio.h>
 #include <string.h>
 #include "commit.h"
 #include "file_manager.h"
+#include "search.h"
+#include "repository.h"
 
 #define MAX_PATH_LENGTH 512
 
@@ -62,17 +63,15 @@ int main(void)
     do
     {
         printf("\n===== GITLITE =====\n");
-        printf("1. Initialize Repository (coming next)\n");
+        printf("1. Initialize Repository\n");
         printf("2. Add File from Disk\n");
         printf("3. Create Commit\n");
         printf("4. View Commit History\n");
-        printf("5. Create Branch (coming next)\n");
-        printf("6. Search (coming next)\n");
-        printf("7. Exit\n");
-        printf("8. Undo Latest Commit\n");
-        printf("9. Save Commit History\n");
-        printf("10. Load Commit History\n");
-
+        printf("5. Exit\n");
+        printf("6. Search\n");
+        printf("7. Undo Latest Commit\n");
+        printf("8. Save Commit History\n");
+        printf("9. Load Commit History\n");
         char input[32];
 
         if (!read_line("Enter your choice: ", input, sizeof(input)))
@@ -87,8 +86,20 @@ int main(void)
         switch (choice)
         {
             case 1:
-                printf("Repository initialization will be connected next.\n");
+            {
+                char path[MAX_PATH_LENGTH];
+
+                if (!read_line("Enter repository directory path: ",
+                   path, sizeof(path)))
                 break;
+
+        if (initialize_repository(path))
+            printf("Repository initialized successfully at: %s\n", path);
+        else
+            printf("Failed to initialize repository.\n");
+
+        break;
+    }
 
             case 2:
             {
@@ -203,9 +214,108 @@ int main(void)
                 printf("Branch management will be connected next.\n");
                 break;
 
-            case 6:
-                printf("Search will be connected next.\n");
+            
+case 6:
+{
+    char search_input[256];
+    int search_choice;
+
+    printf("\n===== SEARCH COMMITS =====\n");
+    printf("1. Search by Commit ID\n");
+    printf("2. Search by Message\n");
+    printf("3. Search by Author\n");
+    printf("4. General Keyword Search\n");
+    printf("Enter search choice: ");
+
+    if (!read_line("", search_input, sizeof(search_input)))
+        break;
+
+    if (sscanf(search_input, "%d", &search_choice) != 1)
+    {
+        printf("Invalid search choice.\n");
+        break;
+    }
+
+    switch (search_choice)
+    {
+        case 1:
+        {
+            int id;
+
+            printf("Enter Commit ID: ");
+
+            if (!read_line("", search_input, sizeof(search_input)) ||
+                sscanf(search_input, "%d", &id) != 1)
+            {
+                printf("Invalid Commit ID.\n");
                 break;
+            }
+
+            const Commit *found = search_commit_by_id(history, id);
+
+            if (found != NULL)
+            {
+                printf("\nCommit ID : %d\n", found->commitID);
+                printf("Author    : %s\n", found->author);
+                printf("Timestamp : %s\n", found->timestamp);
+                printf("Message   : %s\n", found->message);
+            }
+            else
+            {
+                printf("No commit found with ID %d.\n", id);
+            }
+
+            break;
+        }
+
+        case 2:
+        {
+            if (!read_line("Enter message keyword: ",
+                           search_input, sizeof(search_input)))
+                break;
+
+            int count = search_commits_by_message(history, search_input);
+
+            if (count == 0)
+                printf("No matching commit messages found.\n");
+
+            break;
+        }
+
+        case 3:
+        {
+            if (!read_line("Enter author name: ",
+                           search_input, sizeof(search_input)))
+                break;
+
+            int count = search_commits_by_author(history, search_input);
+
+            if (count == 0)
+                printf("No commits found for that author.\n");
+
+            break;
+        }
+
+        case 4:
+        {
+            if (!read_line("Enter keyword: ",
+                           search_input, sizeof(search_input)))
+                break;
+
+            int count = search_commits(history, search_input);
+
+            if (count == 0)
+                printf("No matching commits found.\n");
+
+            break;
+        }
+
+        default:
+            printf("Invalid search choice.\n");
+    }
+
+    break;
+}
 
             case 7:
                 printf("Exiting GitLite...\n");
