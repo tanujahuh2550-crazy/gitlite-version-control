@@ -1,0 +1,30 @@
+## Build and Run
+
+### Prerequisites
+- GCC compiler
+- Windows PowerShell
+- VS Code (recommended)
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/tanujahuh2550-crazy/gitlite-version-control.git
+cd gitlite-version-control
+```
+
+### 2. Compile the project
+
+Open PowerShell in the project root directory:
+
+```powershell
+$sources = Get-ChildItem src -Filter *.c | ForEach-Object { $_.FullName }
+gcc -std=c11 -Wall -Wextra -Wpedantic -Iinclude $sources -o gitlite.exe
+```
+
+### 3. Run GitLite
+
+```powershell
+.\gitlite.exe
+```
+
+### 4. Exit
+Select option 7 from the main menu.

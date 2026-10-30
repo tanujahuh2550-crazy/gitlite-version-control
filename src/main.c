@@ -4,6 +4,7 @@
 #include "file_manager.h"
 #include "search.h"
 #include "repository.h"
+#include "branch.h"
 
 #define MAX_PATH_LENGTH 512
 
@@ -42,10 +43,84 @@ static void clear_pending_files(TrackedFile files[], int *count)
     *count = 0;
 }
 
+static void branch_menu(void)
+{
+    int choice;
+    char name[50];
+    char parent[50];
+    char input[32];
+
+    do
+    {
+        printf("\n===== BRANCH MANAGEMENT =====\n");
+        printf("1. Create Branch\n");
+        printf("2. Search Branch\n");
+        printf("3. Back to Main Menu\n");
+
+        if (!read_line("Enter choice: ", input, sizeof(input)) ||
+            sscanf(input, "%d", &choice) != 1)
+        {
+            printf("Invalid choice.\n");
+            continue;
+        }
+
+        switch (choice)
+        {
+            case 1:
+                if (!read_line("Enter new branch name: ",
+                               name, sizeof(name)) ||
+                    !read_line("Enter parent branch name: ",
+                               parent, sizeof(parent)))
+                    break;
+
+                createBranch(name, parent);
+                break;
+
+            case 2:
+            {
+                if (!read_line("Enter branch name to search: ",
+                               name, sizeof(name)))
+                    break;
+
+                BranchNode *found = findBranch(name);
+
+                if (found != NULL)
+                    printf("Branch '%s' found. Commits: %d\n",
+                           found->branchName, found->commitCount);
+                else
+                    printf("Branch not found.\n");
+
+                break;
+            }
+
+            case 3:
+                printf("Returning to main menu...\n");
+                break;
+
+            default:
+                printf("Invalid choice.\n");
+        }
+
+    } while (choice != 3);
+}
+
 int main(void)
 {
     int choice = 0;
     int pending_count = 0;
+    root = malloc(sizeof(BranchNode));
+
+    if (root == NULL)
+    {   
+        printf("Error: Could not initialize branches.\n");
+        return 1;
+    }
+
+    strcpy(root->branchName, "main");
+    root->commitCount = 0;
+    root->parent = NULL;
+    root->firstChild = NULL;
+    root->nextSibling = NULL;
 
     TrackedFile pending_files[MAX_FILES] = {0};
 
@@ -67,11 +142,12 @@ int main(void)
         printf("2. Add File from Disk\n");
         printf("3. Create Commit\n");
         printf("4. View Commit History\n");
-        printf("5. Exit\n");
+        printf("5. Branch Management\n");
         printf("6. Search\n");
-        printf("7. Undo Latest Commit\n");
-        printf("8. Save Commit History\n");
-        printf("9. Load Commit History\n");
+        printf("7. Exit\n");
+        printf("8. Undo Latest Commit\n");
+        printf("9. Save Commit History\n");
+        printf("10. Load Commit History\n");
         char input[32];
 
         if (!read_line("Enter your choice: ", input, sizeof(input)))
@@ -93,13 +169,13 @@ int main(void)
                    path, sizeof(path)))
                 break;
 
-        if (initialize_repository(path))
-            printf("Repository initialized successfully at: %s\n", path);
-        else
-            printf("Failed to initialize repository.\n");
+            if (initialize_repository(path))
+                printf("Repository initialized successfully at: %s\n", path);
+            else
+                printf("Failed to initialize repository.\n");
 
-        break;
-    }
+            break;
+            }
 
             case 2:
             {
@@ -211,9 +287,8 @@ int main(void)
                 break;
 
             case 5:
-                printf("Branch management will be connected next.\n");
+                branch_menu();
                 break;
-
             
 case 6:
 {
@@ -335,10 +410,35 @@ case 6:
                     printf("Could not save commit history.\n");
                 break;
 
-            case 10:
-                printf("History loading will be checked separately before integration.\n");
-                break;
+            case 10: {
+                CommitHistory *loaded_history = init_commit_history();
+        UndoStack *loaded_undo = init_undo_stack();
 
+       if (loaded_history == NULL || loaded_undo == NULL) {
+           printf("Memory allocation failed!\n");
+            free_commit_history(loaded_history);
+            free_undo_stack(loaded_undo);
+            break;
+        }
+
+        if (load_history_from_file(loaded_history, "gitlite_history.txt") &&
+            rebuild_undo_stack(loaded_undo, loaded_history)) {
+
+            free_commit_history(history);
+            free_undo_stack(undo_stack);
+
+            history = loaded_history;
+            undo_stack = loaded_undo;
+
+            printf("Commit history loaded successfully!\n");
+        } else {
+            printf("Failed to load commit history.\n");
+            free_commit_history(loaded_history);
+            free_undo_stack(loaded_undo);
+        }
+
+        break;
+    }
             default:
                 printf("Invalid choice.\n");
         }
