@@ -43,6 +43,383 @@ static void clear_pending_files(TrackedFile files[], int *count)
     *count = 0;
 }
 
+
+static int is_latest_file_version(const Commit *current, int index)
+{
+    const Commit *later = current->next;
+
+    while (later != NULL)
+    {
+        for (int i = 0; i < later->file_count; i++)
+        {
+            if (strcmp(current->files[index].filename,
+                       later->files[i].filename) == 0)
+                return 0;
+        }
+
+        later = later->next;
+    }
+
+    return 1;
+}
+
+static void show_status(const CommitHistory *history,
+                        TrackedFile pending_files[],
+                        int pending_count)
+{
+    int found_files = 0;
+    int modified = 0;
+    int deleted = 0;
+
+    printf("\n========== GITLITE STATUS ==========\n");
+
+    /* Check files waiting to be committed */
+    if (pending_count > 0)
+    {
+        printf("\nFiles pending commit:\n");
+
+        for (int i = 0; i < pending_count; i++)
+            printf("  PENDING: %s\n", pending_files[i].filename);
+    }
+
+    /* Check the latest committed version of each file */
+    if (history != NULL)
+    {
+        const Commit *current = history->head;
+
+        while (current != NULL)
+        {
+            for (int i = 0; i < current->file_count; i++)
+            {
+                if (!is_latest_file_version(current, i))
+                    continue;
+
+                found_files++;
+
+                const char *filename = current->files[i].filename;
+
+                FILE *file = fopen(filename, "rb");
+
+                if (file == NULL)
+                {
+                    printf("  DELETED:  %s\n", filename);
+                    deleted++;
+                    continue;
+                }
+
+                fclose(file);
+
+                char content[MAX_FILE_CONTENT_LENGTH];
+
+                if (!read_file_content(filename, content, sizeof(content)))
+                {
+                    printf("  UNREADABLE: %s\n", filename);
+                    continue;
+                }
+
+                if (strcmp(content, current->files[i].content) == 0)
+                    printf("  CLEAN:    %s\n", filename);
+                else
+                {
+                    printf("  MODIFIED: %s\n", filename);
+                    modified++;
+                }
+            }
+
+            current = current->next;
+        }
+    }
+
+    if (found_files == 0 && pending_count == 0)
+        printf("\nNo files to track yet.\n");
+
+    printf("\nSummary: %d modified, %d deleted, %d pending.\n",
+           modified, deleted, pending_count);
+    printf("====================================\n");
+}
+
+#define MAX_DIFF_LINES 512
+
+static int split_lines(const char *content,
+                       char lines[][MAX_FILE_CONTENT_LENGTH])
+{
+    int count = 0;
+    int start = 0;
+    int length = (int)strlen(content);
+
+    for (int i = 0; i <= length; i++)
+    {
+        if (content[i] == '\n' || content[i] == '\0')
+        {
+            if (count >= MAX_DIFF_LINES)
+                return -1;
+
+            int line_length = i - start;
+
+            if (line_length > 0 &&
+                content[start + line_length - 1] == '\r')
+                line_length--;
+
+            memcpy(lines[count], content + start, line_length);
+            lines[count][line_length] = '\0';
+
+            count++;
+            start = i + 1;
+        }
+    }
+
+    return count;
+}
+
+static void show_diff(const CommitHistory *history, const char *filename)
+{
+    const TrackedFile *old_file = NULL;
+
+    /* Find the latest committed version of this file */
+    for (const Commit *current = history->head;
+         current != NULL;
+         current = current->next)
+    {
+        for (int i = 0; i < current->file_count; i++)
+        {
+            if (strcmp(current->files[i].filename, filename) == 0)
+                old_file = &current->files[i];
+        }
+    }
+
+    if (old_file == NULL)
+    {
+        printf("No committed version found for this file.\n");
+        return;
+    }
+
+    char new_content[MAX_FILE_CONTENT_LENGTH];
+
+    if (!read_file_content(filename, new_content, sizeof(new_content)))
+    {
+        printf("Could not read the current file.\n");
+        return;
+    }
+
+    char old_lines[MAX_DIFF_LINES][MAX_FILE_CONTENT_LENGTH];
+    char new_lines[MAX_DIFF_LINES][MAX_FILE_CONTENT_LENGTH];
+
+    int old_count = split_lines(old_file->content, old_lines);
+    int new_count = split_lines(new_content, new_lines);
+
+    if (old_count < 0 || new_count < 0)
+    {
+        printf("Too many lines to compare.\n");
+        return;
+    }
+
+    static int dp[MAX_DIFF_LINES + 1][MAX_DIFF_LINES + 1];
+
+    memset(dp, 0, sizeof(dp));
+
+    /* Build the Longest Common Subsequence table */
+    for (int i = old_count - 1; i >= 0; i--)
+    {
+        for (int j = new_count - 1; j >= 0; j--)
+        {
+            if (strcmp(old_lines[i], new_lines[j]) == 0)
+                dp[i][j] = 1 + dp[i + 1][j + 1];
+            else
+                dp[i][j] = dp[i + 1][j] > dp[i][j + 1]
+                               ? dp[i + 1][j]
+                               : dp[i][j + 1];
+        }
+    }
+
+    printf("\n========== FILE DIFF ==========\n");
+    printf("File: %s\n\n", filename);
+
+    int i = 0, j = 0;
+    int changes = 0;
+
+    while (i < old_count || j < new_count)
+    {
+        if (i < old_count && j < new_count &&
+            strcmp(old_lines[i], new_lines[j]) == 0)
+        {
+            printf("  %s\n", old_lines[i]);
+            i++;
+            j++;
+        }
+        else if (i < old_count &&
+                 (j == new_count || dp[i + 1][j] >= dp[i][j + 1]))
+        {
+            printf("- %s\n", old_lines[i]);
+            i++;
+            changes++;
+        }
+        else
+        {
+            printf("+ %s\n", new_lines[j]);
+            j++;
+            changes++;
+        }
+    }
+
+    if (changes == 0)
+        printf("No changes detected.\n");
+
+    printf("\n+ Added lines | - Removed lines\n");
+    printf("===============================\n");
+}
+
+static void restore_commit_file(const CommitHistory *history)
+{
+    char input[32];
+    char filename[MAX_FILENAME_LENGTH];
+    int commit_id;
+    char confirm;
+
+    if (history == NULL || history->head == NULL)
+    {
+        printf("No commits available to restore from.\n");
+        return;
+    }
+
+    display_history(history);
+
+    if (!read_line("\nEnter commit ID: ", input, sizeof(input)) ||
+        sscanf(input, "%d", &commit_id) != 1)
+    {
+        printf("Invalid commit ID.\n");
+        return;
+    }
+
+    const Commit *selected = find_commit_by_id(history, commit_id);
+
+    if (selected == NULL)
+    {
+        printf("Commit not found.\n");
+        return;
+    }
+
+    printf("\nFiles in Commit #%d:\n", commit_id);
+
+    for (int i = 0; i < selected->file_count; i++)
+        printf("%d. %s\n", i + 1, selected->files[i].filename);
+
+    if (!read_line("Enter file path to restore: ",
+                   filename, sizeof(filename)))
+        return;
+
+    const TrackedFile *target = NULL;
+
+    for (int i = 0; i < selected->file_count; i++)
+    {
+        if (strcmp(selected->files[i].filename, filename) == 0)
+        {
+            target = &selected->files[i];
+            break;
+        }
+    }
+
+    if (target == NULL)
+    {
+        printf("File not found in selected commit.\n");
+        return;
+    }
+
+    if (!read_line("This will overwrite the current file. Continue? (y/n): ",
+                   input, sizeof(input)))
+        return;
+
+    confirm = input[0];
+
+    if (confirm != 'y' && confirm != 'Y')
+    {
+        printf("Restore cancelled.\n");
+        return;
+    }
+
+    restore_file_content(target->filename, target->content);
+}
+
+static void history_management_menu(CommitHistory **history,
+                                    UndoStack **undo_stack)
+{
+    int choice;
+    char input[32];
+
+    do
+    {
+        printf("\n===== HISTORY MANAGEMENT =====\n");
+        printf("1. Undo Latest Commit\n");
+        printf("2. Save Commit History\n");
+        printf("3. Load Commit History\n");
+        printf("4. Back to Main Menu\n");
+
+        if (!read_line("Enter choice: ", input, sizeof(input)) ||
+            sscanf(input, "%d", &choice) != 1)
+        {
+            printf("Invalid choice.\n");
+            continue;
+        }
+
+        switch (choice)
+        {
+            case 1:
+                if (rollback_commit(*history, *undo_stack))
+                    printf("Latest commit undone.\n");
+                else
+                    printf("No commit available to undo.\n");
+                break;
+
+            case 2:
+                if (save_history_to_file(*history, "gitlite_history.txt"))
+                    printf("Commit history saved.\n");
+                else
+                    printf("Could not save commit history.\n");
+                break;
+
+            case 3:
+            {
+                CommitHistory *loaded_history = init_commit_history();
+                UndoStack *loaded_undo = init_undo_stack();
+
+                if (loaded_history == NULL || loaded_undo == NULL)
+                {
+                    printf("Memory allocation failed!\n");
+                    free_commit_history(loaded_history);
+                    free_undo_stack(loaded_undo);
+                    break;
+                }
+
+                if (load_history_from_file(loaded_history, "gitlite_history.txt") &&
+                    rebuild_undo_stack(loaded_undo, loaded_history))
+                {
+                    free_commit_history(*history);
+                    free_undo_stack(*undo_stack);
+
+                    *history = loaded_history;
+                    *undo_stack = loaded_undo;
+
+                    printf("Commit history loaded successfully!\n");
+                }
+                else
+                {
+                    printf("Failed to load commit history.\n");
+                    free_commit_history(loaded_history);
+                    free_undo_stack(loaded_undo);
+                }
+
+                break;
+            }
+
+            case 4:
+                break;
+
+            default:
+                printf("Invalid choice.\n");
+        }
+
+    } while (choice != 4);
+}
+
 static void branch_menu(void)
 {
     int choice;
@@ -141,13 +518,12 @@ int main(void)
         printf("1. Initialize Repository\n");
         printf("2. Add File from Disk\n");
         printf("3. Create Commit\n");
-        printf("4. View Commit History\n");
+        printf("4. Version Control\n");
         printf("5. Branch Management\n");
         printf("6. Search\n");
-        printf("7. Exit\n");
-        printf("8. Undo Latest Commit\n");
-        printf("9. Save Commit History\n");
-        printf("10. Load Commit History\n");
+        printf("7. History Management\n");
+        printf("8. Exit\n");
+        
         char input[32];
 
         if (!read_line("Enter your choice: ", input, sizeof(input)))
@@ -283,9 +659,60 @@ int main(void)
             }
 
             case 4:
+{
+    int status_choice = 0;
+    char status_input[32];
+
+    do
+    {
+        printf("\n===== VERSION CONTROL =====\n");
+        printf("1. View Status\n");
+    printf("2. View Commit History\n");
+printf("3. Show File Diff\n");
+printf("4. Restore File from Commit\n");
+printf("5. Back to Main Menu\n");
+        if (!read_line("Enter choice: ",
+                       status_input, sizeof(status_input)) ||
+            sscanf(status_input, "%d", &status_choice) != 1)
+        {
+            printf("Invalid choice.\n");
+            continue;
+        }
+
+        switch (status_choice)
+        {
+            case 1:
+                show_status(history, pending_files, pending_count);
+                break;
+
+            case 2:
                 display_history(history);
                 break;
 
+            case 3:
+{
+    char filename[MAX_FILENAME_LENGTH];
+
+    read_line("Enter file path: ", filename, sizeof(filename));
+    show_diff(history, filename);
+    break;
+}
+
+case 4:
+    restore_commit_file(history);
+    break;
+
+case 5:
+    break;
+
+            default:
+                printf("Invalid choice.\n");
+        }
+
+    } while (status_choice != 5 && status_choice != 0);
+
+    break;
+}
             case 5:
                 branch_menu();
                 break;
@@ -392,58 +819,19 @@ case 6:
     break;
 }
 
-            case 7:
-                printf("Exiting GitLite...\n");
-                break;
+           case 7:
+    history_management_menu(&history, &undo_stack);
+    break;
 
-            case 8:
-                if (rollback_commit(history, undo_stack))
-                    printf("Latest commit undone.\n");
-                else
-                    printf("No commit available to undo.\n");
-                break;
+case 8:
+    printf("Exiting GitLite...\n");
+    break;
 
-            case 9:
-                if (save_history_to_file(history, "gitlite_history.txt"))
-                    printf("Commit history saved.\n");
-                else
-                    printf("Could not save commit history.\n");
-                break;
-
-            case 10: {
-                CommitHistory *loaded_history = init_commit_history();
-        UndoStack *loaded_undo = init_undo_stack();
-
-       if (loaded_history == NULL || loaded_undo == NULL) {
-           printf("Memory allocation failed!\n");
-            free_commit_history(loaded_history);
-            free_undo_stack(loaded_undo);
-            break;
-        }
-
-        if (load_history_from_file(loaded_history, "gitlite_history.txt") &&
-            rebuild_undo_stack(loaded_undo, loaded_history)) {
-
-            free_commit_history(history);
-            free_undo_stack(undo_stack);
-
-            history = loaded_history;
-            undo_stack = loaded_undo;
-
-            printf("Commit history loaded successfully!\n");
-        } else {
-            printf("Failed to load commit history.\n");
-            free_commit_history(loaded_history);
-            free_undo_stack(loaded_undo);
-        }
-
-        break;
-    }
             default:
-                printf("Invalid choice.\n");
+                printf("Invalid choice. Please select a valid option.\n");
         }
 
-    } while (choice != 7);
+    } while (choice != 8);
 
     free_commit_history(history);
     free_undo_stack(undo_stack);

@@ -6,6 +6,7 @@
 
 int save_data(const char *filename, const char *data);
 int load_data(const char *filename);
+int restore_file_content(const char *path, const char *content);
 
 int read_file_content(
     const char *path,

@@ -465,6 +465,8 @@ const Commit *find_commit_by_id(const CommitHistory *history, int commit_id)
 
     return NULL;
 }
+ 
+
 
 int rollback_commit(CommitHistory *history, UndoStack *stack)
 {
@@ -522,7 +524,9 @@ int save_history_to_file(const CommitHistory *history, const char *filepath)
     int success = 1;
 
     if (history == NULL || filepath == NULL || filepath[0] == '\0' ||
-        history->next_commit_id <= 0) {
+        history->next_commit_id <= 0 || history->head == NULL ||
+        history->total_commits <= 0) {
+        printf("Cannot save an empty commit history.\n");
         return 0;
     }
 
@@ -692,6 +696,10 @@ int load_history_from_file(CommitHistory *history, const char *filepath)
     }
 
     if (ferror(file)) {
+        goto cleanup;
+    }
+
+    if (loaded.total_commits == 0) {
         goto cleanup;
     }
 

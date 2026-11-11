@@ -107,3 +107,29 @@ int read_file_content(const char *path, char *buffer, size_t buffer_size)
 
     return 1;
 }
+
+int restore_file_content(const char *path, const char *content)
+{
+    if (path == NULL || content == NULL)
+        return 0;
+
+    FILE *file = fopen(path, "w");
+
+    if (file == NULL)
+    {
+        perror("Restore failed");
+        return 0;
+    }
+
+    if (fputs(content, file) == EOF)
+    {
+        fclose(file);
+        return 0;
+    }
+
+    if (fclose(file) != 0)
+        return 0;
+
+    printf("File restored successfully: %s\n", path);
+    return 1;
+}
