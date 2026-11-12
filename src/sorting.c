@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 #include "sorting.h"
+#include "commit.h"
 
 /* =========================================================
    MERGE SORT
@@ -118,25 +120,24 @@ static void swap_commit_data(Commit* a, Commit* b)
 
     // Swap messages
     char temp_message[MAX_COMMIT_MESSAGE_LENGTH];
-    strcpy(temp_message, a->message);
-    strcpy(a->message, b->message);
-    strcpy(b->message, temp_message);
+    snprintf(temp_message, sizeof(temp_message), "%s", a->message);
+    snprintf(a->message, sizeof(a->message), "%s", b->message);
+    snprintf(b->message, sizeof(b->message), "%s", temp_message);
 
     // Swap authors
     char temp_author[MAX_AUTHOR_LENGTH];
-    strcpy(temp_author, a->author);
-    strcpy(a->author, b->author);
-    strcpy(b->author, temp_author);
+    snprintf(temp_author, sizeof(temp_author), "%s", a->author);
+    snprintf(a->author, sizeof(a->author), "%s", b->author);
+    snprintf(b->author, sizeof(b->author), "%s", temp_author);
 
     // Swap timestamps
     char temp_timestamp[MAX_TIMESTAMP_LENGTH];
-    strcpy(temp_timestamp, a->timestamp);
-    strcpy(a->timestamp, b->timestamp);
-    strcpy(b->timestamp, temp_timestamp);
+    snprintf(temp_timestamp, sizeof(temp_timestamp), "%s", a->timestamp);
+    snprintf(a->timestamp, sizeof(a->timestamp), "%s", b->timestamp);
+    snprintf(b->timestamp, sizeof(b->timestamp), "%s", temp_timestamp);
 
     // Swap tracked files
     TrackedFile temp_files[MAX_FILES];
-
     memcpy(temp_files, a->files, sizeof(temp_files));
     memcpy(a->files, b->files, sizeof(a->files));
     memcpy(b->files, temp_files, sizeof(b->files));
