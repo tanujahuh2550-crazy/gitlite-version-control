@@ -1,0 +1,9 @@
+# 1. Go to project directory
+cd E:\Projects\gitlite-dsa
+
+# 2. Compile all source files
+$sources = Get-ChildItem src -Filter *.c | ForEach-Object { $_.FullName }
+gcc -std=c11 -Wall -Wextra -Wpedantic -Iinclude $sources -o gitlite.exe
+
+# 3. Run GitLite
+.\gitlite.exe
