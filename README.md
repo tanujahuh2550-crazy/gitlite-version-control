@@ -113,41 +113,37 @@ VersionVault/
 
 # 👥 Team Members & Responsibilities
 
-### Tanuja (Team Leader)
+# 👥 Team Members & Responsibilities
 
-* Project Architecture
-* System Integration
-* Repository Management
-* File Handling
-* Testing & Debugging
-* Documentation & Presentation
+### Tanuja (Team Leader)
+- Project Architecture & Module Integration
+- File Manager & Repository Management
+- File Handling and Data Persistence
+- System Integration
+- Testing & Debugging
 
 ### Kaushal
-
-* Commit Engine
-* Linked List Implementation
-* Stack (Undo)
-* Branch Logic
+- Commit Engine Implementation
+- Commit History using Linked List
+- Undo Operation using Stack
+- GUI Development (In Progress)
 
 ### Yashasvi
-
-* Hash Table
-* Binary Search Tree
-* Search Module
-* Sorting Algorithms
+- Hash Table Implementation
+- Binary Search Tree (BST)
+- Search Module
+- Sorting Algorithms (Merge Sort & Quick Sort)
 
 ### Kavya
-
-* User Interface
-* Menu System
-* File Operations
-* Repository & Branch Management
-
+- Main Menu Implementation
+- Console User Interface
+- Menu Navigation & User Interaction
+- Documentation & Presentation
 ---
 
 # 🛠️ Technologies Used
 
-* C/C++
+* C
 * File Handling
 * Git
 * GitHub
