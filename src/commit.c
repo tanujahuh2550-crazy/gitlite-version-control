@@ -1,3 +1,4 @@
+
 #include "commit.h"
 
 #include <errno.h>
@@ -744,3 +745,4 @@ void free_undo_stack(UndoStack *stack)
     /* The stack contains non-owning pointers; commit nodes are freed by the history. */
     free(stack);
 }
+

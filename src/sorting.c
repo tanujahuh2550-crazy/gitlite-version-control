@@ -2,6 +2,7 @@
 #include <string.h>
 #include "sorting.h"
 #include "commit.h"
+#include "sorting.h"
 
 /* =========================================================
    MERGE SORT

@@ -194,3 +194,7 @@ GITLITE demonstrates how multiple Data Structures work together to solve a real-
 **Project Type:** Console-Based Application
 
 **Inspired by:** Modern Version Control Systems (Educational Purpose Only)
+
+$sources = Get-ChildItem src -Filter *.c | ForEach-Object { $_.FullName }
+gcc -std=c11 -Wall -Wextra -Wpedantic -Iinclude $sources -o gitlite.exe
+
